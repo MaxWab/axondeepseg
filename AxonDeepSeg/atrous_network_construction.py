@@ -1,7 +1,5 @@
+# -*- coding: utf-8 -*-
 
-
-# Imports
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2' # To get rid of Tensorflow warnings.
 
 import time
 import math
@@ -11,6 +9,9 @@ import tensorflow as tf
 import pickle
 from data_management.input_data import input_data
 from config_tools import generate_config
+
+# Imports
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2' # To get rid of Tensorflow warnings.
 
 # First, we define the functions that we are going to use to construct the network.
 # Most functions are encapsulations of low level layers to enable clear and easy call in the main network building
@@ -32,7 +33,7 @@ def atrous_conv_relu(x, n_out_chan, k_size, k_stride, scope, dilation_rate=1,
     with tf.variable_scope(scope):
         if activate_bn == True:
             net = tf.contrib.layers.conv2d(x, num_outputs=n_out_chan, kernel_size=k_size, stride=k_stride, 
-        							   rate=dilation_rate,
+                                       rate=dilation_rate,
                                        activation_fn=tf.nn.relu, normalizer_fn=tf.contrib.layers.batch_norm,
                                        normalizer_params={'scale':True, 'is_training':training_phase,
                                                           'decay':bn_decay,'scope':'bn'},
@@ -40,7 +41,7 @@ def atrous_conv_relu(x, n_out_chan, k_size, k_stride, scope, dilation_rate=1,
                                       )
         else:
             net = tf.contrib.layers.conv2d(x, num_outputs=n_out_chan, kernel_size=k_size, stride=k_stride, 
-            						   rate=dilation_rate,
+                                       rate=dilation_rate,
                                        activation_fn=tf.nn.relu, weights_initializer = w_initializer, scope='convolution'
                                       )
         net = tf.contrib.layers.dropout(net, keep_prob=keep_prob, is_training=training_phase)
@@ -137,13 +138,15 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
     """
     Create the U-net.
     Input :
-        x : TF object to define, ensemble des patchs des images :graph input
+        x : TF object to define
         config : dict : described in the header.
         image_size : int : The image size
 
     Output :
         The U-net.
     """
+    
+    print "We are in uconv_net, atrous version!"
     
     # Load the variables
     image_size = training_config["trainingset_patchsize"]
@@ -179,7 +182,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
 
             net = atrous_conv_relu(net, features_per_convolution[i][conv_number][1], 
                             size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
-                            dilation_rate=2*(i+1),
+                            dilation_rate=7,
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
                             keep_prob=dropout,
@@ -243,7 +246,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
 
             net = atrous_conv_relu(net, features_per_convolution[depth - i - 1][conv_number][1], 
                             size_of_convolutions_per_layer[depth - i - 1][conv_number], k_stride=1, 
-                            dilation_rate=2*(depth-i), 
+                            dilation_rate=7, 
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
                             keep_prob=dropout,
