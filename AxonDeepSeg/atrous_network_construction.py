@@ -146,8 +146,6 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
         The U-net.
     """
     
-    print "We are in uconv_net, atrous version!"
-    
     # Load the variables
     image_size = training_config["trainingset_patchsize"]
     n_classes = training_config["n_classes"]
@@ -174,7 +172,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
     ######################### CONTRACTION PHASE ########################
     ####################################################################
     
-    for i in range(depth):
+    for i in range(depth-1):
 
         for conv_number in range(number_of_convolutions_per_layer[i]):
             if verbose:
@@ -204,59 +202,65 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
     ####################################################################
     ########################### DEEPEST PHASE ##########################
     ####################################################################
+   
 
     # For the moment we keem the same number of channels as the last layer we went through
-    #net = conv_relu(net, features_per_convolution[i][conv_number][1], 
+    # the parameters from the last layer are attainable with depth-1
+    for conv_number in range(number_of_convolutions_per_layer[depth-1]):
+    #    net = conv_relu(net, features_per_convolution[i][conv_number][1], 
     #                size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
     #                w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
     #                training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay, scope='deepconv1')
-    #
-    #net = conv_relu(net, features_per_convolution[i][conv_number][1], 
-    #                size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
-    #                w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-    #                training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay, scope='deepconv2')
-    #
-    #data_temp_size.append(data_temp_size[-1])
-    #data_temp = net
+    
+        net = atrous_conv_relu(net, features_per_convolution[depth-1][conv_number][1], 
+                            size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
+                            dilation_rate=dilation_rate[depth-1][conv_number],
+                            w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
+                            training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
+                            keep_prob=dropout,
+                            scope='deepconv-d'+str(depth-1)+'-c'+str(conv_number))
+    
+    
+    data_temp_size.append(data_temp_size[-1])
+    data_temp = net
     
     #################################################x@###################
     ########################## EXPANSION PHASE #########################
     ####################################################################
     
-    for i in range(depth):        
+    for i in range(depth-1):        
         # Upsampling
         net = tf.image.resize_images(data_temp, [data_temp_size[-1] * 2, data_temp_size[-1] * 2])
         
         # Convolution
-        net = conv_relu(net, features_per_convolution[depth - i - 1][-1][1], 
+        net = conv_relu(net, features_per_convolution[depth - i - 2][-1][1], 
                         k_size=2, k_stride=1, 
                         w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                        training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay, scope='upconv-d'+str(depth-i-1))
+                        training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay, scope='upconv-d'+str(depth-i-2))
         
         data_temp_size.append(data_temp_size[-1] * 2)
 
         # concatenation (see U-net article)
-        net = tf.concat(values=[tf.slice(relu_results[depth-i-1], [0, 0, 0, 0], [-1, data_temp_size[depth-i-1],
-                                                             data_temp_size[depth-i-1], -1]), net], axis=3)
+        net = tf.concat(values=[tf.slice(relu_results[depth-i-2], [0, 0, 0, 0], [-1, data_temp_size[depth-i-2],
+                                                             data_temp_size[depth-i-2], -1]), net], axis=3)
         
         # Classic convolutions
-        for conv_number in range(number_of_convolutions_per_layer[depth - i - 1]):
+        for conv_number in range(number_of_convolutions_per_layer[depth - i - 2]):
             if verbose:
                 print('Layer: ', i, ' Conv: ', conv_number, 'Features: ', features_per_convolution[i][conv_number])
                 print('Size:', size_of_convolutions_per_layer[i][conv_number])
 
-            net = atrous_conv_relu(net, features_per_convolution[depth - i - 1][conv_number][1], 
-                            size_of_convolutions_per_layer[depth - i - 1][conv_number], k_stride=1, 
-                            dilation_rate=dilation_rate[depth - i - 1][conv_number], 
+            net = atrous_conv_relu(net, features_per_convolution[depth - i - 2][conv_number][1], 
+                            size_of_convolutions_per_layer[depth - i - 2][conv_number], k_stride=1, 
+                            dilation_rate=dilation_rate[depth - i - 2][conv_number], 
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
                             keep_prob=dropout,
-                            scope='econv-d'+str(depth-i-1)+'-c'+str(conv_number))
+                            scope='econv-d'+str(depth-i-2)+'-c'+str(conv_number))
         
         data_temp = net
 
     # Final convolution and segmentation
-    
     finalconv = tf.contrib.layers.conv2d(net, num_outputs=n_classes, kernel_size=1, stride=1, scope='finalconv', padding='SAME')
         
     # Adding summary of the activations for the last convolution
