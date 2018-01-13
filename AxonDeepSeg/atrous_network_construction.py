@@ -206,9 +206,14 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
 
     # For the moment we keem the same number of channels as the last layer we went through
     # the parameters from the last layer are attainable with depth-1
-    for conv_number in range(number_of_convolutions_per_layer[depth-1]):   
+    for conv_number in range(number_of_convolutions_per_layer[depth-1]):
+        
+        if verbose:
+                print('Layer: ', depth-1, ' Conv: ', conv_number, 'Features: ', features_per_convolution[depth-1][conv_number])
+                print('Size:', size_of_convolutions_per_layer[depth-1][conv_number])
+                
         net = atrous_conv_relu(net, features_per_convolution[depth-1][conv_number][1], 
-                            size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
+                            size_of_convolutions_per_layer[depth-1][conv_number], k_stride=1, 
                             dilation_rate=dilation_rate[depth-1][conv_number],
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
