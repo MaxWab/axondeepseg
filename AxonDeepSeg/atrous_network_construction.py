@@ -158,6 +158,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
     features_per_convolution = training_config["features_per_convolution"]
     downsampling = training_config["downsampling"]
     activate_bn = training_config["batch_norm_activate"]
+    dilation_rate = training_config["dilation_rate"]
     if bn_updated_decay is None:
         bn_decay = training_config["batch_norm_decay_starting_decay"]
     else:
@@ -182,7 +183,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
 
             net = atrous_conv_relu(net, features_per_convolution[i][conv_number][1], 
                             size_of_convolutions_per_layer[i][conv_number], k_stride=1, 
-                            dilation_rate=7,
+                            dilation_rate=dilation_rate[i][conv_number],
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
                             keep_prob=dropout,
@@ -218,7 +219,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
     #data_temp_size.append(data_temp_size[-1])
     #data_temp = net
     
-    ####################################################################
+    #################################################x@###################
     ########################## EXPANSION PHASE #########################
     ####################################################################
     
@@ -246,7 +247,7 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
 
             net = atrous_conv_relu(net, features_per_convolution[depth - i - 1][conv_number][1], 
                             size_of_convolutions_per_layer[depth - i - 1][conv_number], k_stride=1, 
-                            dilation_rate=7, 
+                            dilation_rate=dilation_rate[depth - i - 1][conv_number], 
                             w_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             training_phase=phase, activate_bn=activate_bn, bn_decay = bn_decay,
                             keep_prob=dropout,
