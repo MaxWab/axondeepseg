@@ -3,7 +3,7 @@
 
 from scipy.misc import imread, imsave
 from skimage.transform import rescale, resize
-from AxonDeepSeg.network_construction import *
+from AxonDeepSeg.atrous_network_construction import *
 from config_tools import update_config, default_configuration
 import os
 import imageio
@@ -133,7 +133,7 @@ def apply_convnet(path_acquisitions, acquisitions_resolutions, path_model_folder
 
             # First we perform inference on the input.
             current_batch_prediction, current_batch_prediction_proba = perform_batch_inference(
-                sess, pred, batch_x, rem, patch_size,
+                sess, pred, x, batch_x, rem, patch_size,
                 n_classes, prediction_proba_activate=prediction_proba_activate)
 
             # Update of the predictions lists.
@@ -141,7 +141,7 @@ def apply_convnet(path_acquisitions, acquisitions_resolutions, path_model_folder
             predictions_proba_list.extend(current_batch_prediction_proba)
 
         else:
-            current_batch_prediction = perform_batch_inference(sess, pred, batch_x, rem,
+            current_batch_prediction = perform_batch_inference(sess, pred, x, batch_x, rem,
                                                                patch_size, n_classes,
                                                                prediction_proba_activate=prediction_proba_activate)
             # Update of the predictions lists.
