@@ -608,14 +608,23 @@ def train_model(path_trainingset, path_model, config, path_model_init=None,
 def pw_dices(prediction, gt):
     """
     Computes the pixel-wise dice from the prediction tensor outputted by the network.
-    :param prediction: Tensor, the prediction outputted by the network. Shape (N,H,W,C).
-    :param gt: Tensor, the gold standard we work with. Shape (N,H,W,C).
+    :param prediction: Tensor, the prediction outputted by the network. Shape (N,H*W,C).
+    :param gt: Tensor, the gold standard we work with. Shape (N,H*W,C).
     :return: Vector, dice per class for the current batch.
     """
 
     sum_ = tf.reduce_sum(prediction, axis=1) + tf.reduce_sum(gt, axis=1)
     intersection = tf.logical_and(tf.cast(prediction, tf.bool), tf.cast(gt, tf.bool))
     return tf.multiply(2., tf.div(tf.reduce_sum(tf.cast(intersection, tf.float32), axis=1), sum_))
+
+def dice_loss(prediction, gt):
+    w_=tf.reduce_sum(gt, axis=0)
+    sum_ = tf.reduce_sum(prediction, axis=0) + w_
+    w_=tf.div(w_,tf.reduce_sum(w_))
+    intersection = tf.logical_and(tf.cast(prediction, tf.bool), tf.cast(gt, tf.bool))
+    class_dice=tf.multiply(2., tf.div(tf.reduce_sum(tf.cast(intersection, tf.float32), axis=0), sum_))
+    
+    return -tf.reduce_mean(tf.multiply(w_,class_dice))
     
         
 # To Call the training in the terminal

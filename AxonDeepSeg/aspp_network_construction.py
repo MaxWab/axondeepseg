@@ -217,15 +217,16 @@ def uconv_net(x, training_config, phase, bn_updated_decay = None, verbose = True
                             keep_prob=dropout, scope='conv6e')
     
     # Global Average Pooling, used for the global context
-    conv6f = tf.reduce_mean(conv2, [1, 2])
-    conv6f = tf.expand_dims(conv6f, 1)
-    conv6f = tf.tile(conv6f,[1, image_size*image_size, 1],'rep_mean')
-    conv6f = tf.reshape(tensor=conv6f, shape=[-1, image_size,image_size, 32],name='reshape_mean')
+    #conv6f = tf.reduce_mean(conv2, [1, 2])
+    #conv6f = tf.expand_dims(conv6f, 1)
+    #conv6f = tf.tile(conv6f,[1, image_size*image_size, 1],'rep_mean')
+    #conv6f = tf.reshape(tensor=conv6f, shape=[-1, image_size,image_size, 32],name='reshape_mean')
     
     # Concatenation step
-    concat = tf.concat([conv6a, conv6b, conv6c, conv6d, conv6f, conv6e], axis=3)
-    concat = tf.contrib.layers.batch_norm(concat, center=True, scale=True, is_training=phase,                                scope='bn')
-    concat = tf.nn.dropout(concat, keep_prob=dropout)
+#    concat = tf.concat([conv6a, conv6b, conv6c, conv6d, conv6f, conv6e], axis=3)
+    concat = tf.concat([conv6a, conv6b, conv6c, conv6d, conv6e], axis=3)    
+    concat = tf.contrib.layers.batch_norm(concat, scale=True, is_training=phase,decay=bn_decay,scope='bn')
+    concat = tf.contrib.layers.dropout(concat, keep_prob=dropout, is_training=phase)
     
     # Last convolution, amort step
     conv7 = atrous_conv_relu(concat, 64, 1, k_stride=1, dilation_rate=1,

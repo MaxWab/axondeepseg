@@ -3,7 +3,7 @@
 
 from scipy.misc import imread, imsave
 from skimage.transform import rescale, resize
-from AxonDeepSeg.atrous_network_construction import *
+from AxonDeepSeg.aspp_network_construction import *
 from config_tools import update_config, default_configuration
 import os
 import imageio
